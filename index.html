@@ -15,7 +15,7 @@
         window.localStorage.setItem('debug', '* -engine* -socket* *ERROR* *WARN*');
     </script>
     <script src='jssip-3.3.11.js'></script>
-    <script src='call.js'></script>
+    <script src='call.js'></script> 
 </head>
 
 <body onload="loadPage()">
@@ -29,26 +29,54 @@
                 </div>
             </div>
         </div>
-        <div class="input-group mb-6">
-            <div class="input-group-prepend">
-                <span class="input-group-text">Login</span>
+        <div class="d-flex flex-row">
+            <div class="d-flex flex-column input-group col-4 offset-0">
+                <div class="input-group-prepend mb-1">
+                    <span>Server address</span>                
+                </div>
+                <div class="w_100 mb-4">
+                    <input id="serverAddressText" type="text" class="form-control">
+                </div>
+
+                <div class="input-group-prepend mb-1">
+                    <span>Name</span>                
+                </div>
+                <div class="w_100 mb-4">
+                    <input id="loginText" type="text" class="form-control">
+                </div>
+
+                <div class="input-group-prepend mb-1">
+                    <span>Realm</span>                
+                </div>
+                <div class="w_100 mb-4">
+                    <input id="realmText" type="text" class="form-control">
+                </div>
+
+                <div class="input-group-prepend mb-1">
+                    <span>Password</span>
+                </div>
+                <div class="w_100 mb-4">
+                    <input id="passwordText" type="password" class="form-control">
+                </div>
+                <div class="text-center d-flex justify-content-between">                
+                    <button id="loginButton" type="button" class="btn btn-success col-5" onclick="login()">Login</button>
+                    <button id="logOutButton" type="button" class="btn btn-danger col-5" onclick="logout()" disabled>LogOut</button>
+                </div>
             </div>
-            <input id="loginText" type="text" class="form-control">
 
-            <div class="input-group-prepend">
-                <span class="input-group-text">Password</span>
+            <div class="d-flex flex-column input-group col-8 offset-2" id="callPanel">
+                <div class="input-group-prepend mb-1">
+                    <span>Call</span>                
+                </div>
+                <div class="d-flex flex-row w_100 mb-4">
+                    <input id="callNumberText" type="text" class="form-control" placeholder="Enter phone number to call" disabled>
+                    <button id="callNumberButton" type="button" class="btn btn-outline-dark" onclick="call()" disabled>Call</button>
+                </div>
+                <div class="text-center d-flex justify-content-between"> 
+                    <button id="answerButton" type="button" class="btn btn-success col-5" onclick="" disabled>Answer</button>
+                    <button id="hangUpButton" type="button" class="btn btn-danger col-5" onclick="hangUp()" disabled>Hang Up</button>
+                </div>
             </div>
-            <input id="passwordText" type="password" class="form-control">
-
-            <button id="loginButton" type="button" class="btn btn-primary" onclick="login()">Login</button>
-            <button id="logOutButton" type="button" class="btn btn-primary d-none" onclick="logout()">LogOut</button>
-
-        </div>
-
-        <div class="input-group mb-6 d-none" id="callPanel">
-            <input id="callNumberText" type="text" class="form-control" placeholder="Call number">
-            <button id="callNumberButton" type="button" class="btn btn-success" onclick="call()">Call</button>
-            <button id="hangUpButton" type="button" class="btn btn-danger d-none" onclick="hangUp()">Hang Up</button>
         </div>
 
         <audio id="localAudio" autoPlay muted></audio>
