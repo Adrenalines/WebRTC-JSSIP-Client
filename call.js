@@ -31,7 +31,7 @@ function login() {
 
   socket = new JsSIP.WebSocketInterface(this.serverAddressText.val());
   _ua = new JsSIP.UA({
-    uri: 'sip:' + this.loginText.val() + '@' + this.realmText,
+    uri: 'sip:' + this.loginText.val() + '@' + this.realmText.val(),
     password: this.passwordText.val(),
     display_name: this.loginText.val(),
     register: true,
@@ -49,19 +49,19 @@ function login() {
   });
 
   // астер нас зарегал, теперь можно звонить и принимать звонки
-  this._ua.on('registered', () => {
-    console.log("UA registered");
-    this.loginButton.prop('disabled', true);
-    this.logOutButton.prop('disabled', false);
-    this.serverAddressText.prop('disabled', true);
-    this.realmText.prop('disabled', true);
-    this.loginText.prop('disabled', true);
-    this.passwordText.prop('disabled', true);
+  //   this._ua.on('registered', () => {
+  console.log('UA registered');
+  this.loginButton.prop('disabled', true);
+  this.logOutButton.prop('disabled', false);
+  this.serverAddressText.prop('disabled', true);
+  this.realmText.prop('disabled', true);
+  this.loginText.prop('disabled', true);
+  this.passwordText.prop('disabled', true);
 
-    this.callText.prop('disabled', false);
-    this.callButton.prop('disabled', false);
-    this.answerButton.prop('disabled', false);  
-  });
+  this.callText.prop('disabled', false);
+  this.callButton.prop('disabled', false);
+  this.answerButton.prop('disabled', true);
+  //   });
 
   // астер про нас больше не знает
   this._ua.on('unregistered', () => {
@@ -75,6 +75,67 @@ function login() {
 
   // заводим шарманку
   this._ua.start();
+
+  // Это нужно для входящего звонка
+  this._ua.on('newRTCSession', data => {
+    let session = data.session;
+
+    if (session.direction === 'incoming') {
+      this.callButton.prop('disabled', true);
+      this.answerButton.prop('disabled', false);
+      this.hangUpButton.prop('disabled', false);
+
+      // Добавлем обработчик кнопке Answer
+      $('#answerButton').click(function() {
+        session.answer({
+          mediaConstraints: {
+            audio: true, // only audio calls
+            video: false,
+          },
+        });
+      });
+
+      // Добавлем обработчик кнопке HangUp
+      $('#hangUpButton').click(function() {
+        session.terminate();
+      });
+
+      // incoming call here
+      session.on('accepted', () => {
+        this.answerButton.prop('disabled', true);
+        this.hangUpButton.prop('disabled', false);
+        console.log('UA session accepted');
+        stopSound('ringback.ogg');
+        playSound('answered.mp3', false);
+      });
+
+      session.on('ended', () => {
+        console.log('UA session ended');
+        playSound('rejected.mp3', false);
+
+        this.callButton.prop('disabled', false);
+        this.answerButton.prop('disabled', false);
+        this.hangUpButton.prop('disabled', true);
+      });
+
+      session.on('failed', () => {
+        console.log('UA session failed');
+        playSound('rejected.mp3', false);
+
+        this.callButton.prop('disabled', false);
+        this.answerButton.prop('disabled', false);
+        this.hangUpButton.prop('disabled', true);
+      });
+
+      session.on('addstream', function(e) {
+        console.log('UA session addstream');
+        let remoteAudioControl = document.getElementById('remoteAudio');
+        remoteAudioControl.src = window.URL.createObjectURL(e.stream);
+        remoteAudioControl.play();
+      });
+    }
+    // audioPlayer.play('ringing');
+  });
 }
 
 function logout() {
@@ -91,27 +152,44 @@ function logout() {
   this.callButton.prop('disabled', true);
   this.answerButton.prop('disabled', true);
   this.hangUpButton.prop('disabled', true);
-  
 
   // закрываем всё нафиг, вылогиниваемся из астера, закрываем коннект
   this._ua.stop();
 }
 
 function call() {
-  let number = $('#callNumberText').val();
+  const number = $('#callNumberText').val();
+  const extraHeadersKeys = document.getElementsByClassName('extra-headers-key');
+  const extraHeadersValues = document.getElementsByClassName(
+    'extra-headers-value'
+  );
+  let extraHeaders = [];
+  
+
+  for (let i = 0; i < extraHeadersKeys.length; i++) {
+    if (extraHeadersKeys[i].value !== '' && extraHeadersValues[i].value !== '')
+      extraHeaders.push(
+        extraHeadersKeys[i].value + ': ' + extraHeadersValues[i].value
+      );
+  }
+  console.log(extraHeaders);
+
   localStorage.setItem('callNumber', number);
 
   this.callButton.prop('disabled', true);
   this.answerButton.prop('disabled', true);
   this.hangUpButton.prop('disabled', false);
-
+  
   // Делаем ИСХОДЯЩИЙ звонок
   // Принимать звонки этот код не умеет!
   this.session = this._ua.call(number, {
     pcConfig: {
       hackStripTcp: true, // Важно для хрома, чтоб он не тупил при звонке
       rtcpMuxPolicy: 'negotiate', // Важно для хрома, чтоб работал multiplexing. Эту штуку обязательно нужно включить на астере.
-      iceServers: [],
+      iceServers: [
+        { urls: ['stun:a.example.com', 'stun:b.example.com'] },
+        { urls: 'turn:example.com', username: 'foo', credential: ' 1234' }
+      ],
     },
     mediaConstraints: {
       audio: true, // Поддерживаем только аудио
@@ -121,21 +199,15 @@ function call() {
       offerToReceiveAudio: 1, // Принимаем только аудио
       offerToReceiveVideo: 0,
     },
-  });
-
-  // Это нужно для входящего звонка, пока не используем
-  this._ua.on('newRTCSession', data => {
-    if (!this._mounted) return;
-
-    if (data.originator === 'local') return;
-
-    // audioPlayer.play('ringing');
+    extraHeaders,
   });
 
   // Астер нас соединил с абонентом
   this.session.on('connecting', () => {
     console.log('UA session connecting');
     playSound('ringback.ogg', true);
+
+    // Добавляем обработчик кнопке HangUp    
 
     // Тут мы подключаемся к микрофону и цепляем к нему поток, который пойдёт в астер
     let peerconnection = this.session.connection;
@@ -155,9 +227,12 @@ function call() {
     // Как только астер отдаст нам поток абонента, мы его засунем к себе в наушники
     peerconnection.addEventListener('addstream', event => {
       console.log('UA session addstream');
-
       let remoteAudioControl = document.getElementById('remoteAudio');
       remoteAudioControl.srcObject = event.stream;
+
+      $('#hangUpButton').click(() => {
+        this.session.terminate();
+      });
     });
   });
 
@@ -197,11 +272,6 @@ function call() {
   });
 }
 
-function hangUp() {
-  this.session.terminate();
-  JsSIP.Utils.closeMediaStream(this._localClonedStream);
-}
-
 function playSound(soundName, loop) {
   this._soundsControl.pause();
   this._soundsControl.currentTime = 0.0;
@@ -213,4 +283,16 @@ function playSound(soundName, loop) {
 function stopSound() {
   this._soundsControl.pause();
   this._soundsControl.currentTime = 0.0;
+}
+
+function addExtraHeaders() {
+  $('#extra-headers')
+    .clone()
+    .appendTo($('.extra-headers'));
+}
+
+function addIceServers() {
+  $('#ice-servers')
+    .clone()
+    .appendTo($('.ice-servers'));
 }

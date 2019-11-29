@@ -66,6 +66,33 @@
 
             <div class="d-flex flex-column input-group col-8 offset-2" id="callPanel">
                 <div class="input-group-prepend mb-1">
+                    <span>Extra Headers</span>                                   
+                </div>
+                <div class="extra-headers d-flex flex-column w_100">
+                    <div id="extra-headers" class="d-flex flex-row w_100">
+                        <input id="extraHeadersKey" type="text" class="form-control extra-headers-key" placeholder="Key">
+                        <input id="extraHeadersValue" type="text" class="form-control extra-headers-value" placeholder="Value">
+                    </div>
+                </div>
+                <div>
+                    <button id="extraHeadersAddButton" type="button" class="btn btn-outline-dark btn-sm mb-4" onclick="addExtraHeaders()">+</button>
+                </div>                
+
+                <div class="input-group-prepend mb-1">
+                    <span>ICE Servers</span>                
+                </div>
+                <div class="ice-servers d-flex flex-column w_100">
+                    <div id="ice-servers" class="d-flex flex-row w_100">
+                        <input id="iceServersUrls" type="text" class="form-control ice-servers-urls" placeholder="Urls">
+                        <input id="iceServersUsername" type="text" class="form-control ice-servers-username" placeholder="Username">
+                        <input id="iceServersCredential" type="text" class="form-control ice-servers-credential" placeholder="Credential">
+                    </div>
+                </div>
+                <div>
+                    <button id="iceServersAddButton" type="button" class="btn btn-outline-dark btn-sm mb-4" onclick="addIceServers()">+</button>
+                </div>
+
+                <div class="input-group-prepend mb-1">
                     <span>Call</span>                
                 </div>
                 <div class="d-flex flex-row w_100 mb-4">
@@ -73,8 +100,8 @@
                     <button id="callNumberButton" type="button" class="btn btn-outline-dark" onclick="call()" disabled>Call</button>
                 </div>
                 <div class="text-center d-flex justify-content-between"> 
-                    <button id="answerButton" type="button" class="btn btn-success col-5" onclick="" disabled>Answer</button>
-                    <button id="hangUpButton" type="button" class="btn btn-danger col-5" onclick="hangUp()" disabled>Hang Up</button>
+                    <button id="answerButton" type="button" class="btn btn-success col-5" disabled>Answer</button>
+                    <button id="hangUpButton" type="button" class="btn btn-danger col-5" disabled>Hang Up</button>
                 </div>
             </div>
         </div>
