@@ -6,6 +6,9 @@ function loadPage() {
   $('#loginText').val(localStorage.getItem('login'));
   $('#passwordText').val(localStorage.getItem('pwd'));
   $('#callNumberText').val(localStorage.getItem('callNumber'));
+  $('#extraHeadersKey').val(localStorage.getItem('extraHeadersKey'));
+  $('#extraHeadersValue').val(localStorage.getItem('extraHeadersValue'));
+  $('#iceServersUrls').val(localStorage.getItem('iceServersUrls'));
 
   this._soundsControl = document.getElementById('sounds');
 }
@@ -24,10 +27,17 @@ function login() {
   this.answerButton = $('#answerButton');
   this.hangUpButton = $('#hangUpButton');
 
+  this.extraHeadersKeyText = $('#extraHeadersKey');
+  this.extraHeadersValueText = $('#extraHeadersValue');
+  this.iceServersUrlsText = $('#iceServersUrls');
+
   localStorage.setItem('address', this.serverAddressText.val());
   localStorage.setItem('realm', this.realmText.val());
   localStorage.setItem('login', this.loginText.val());
   localStorage.setItem('pwd', this.passwordText.val());
+  localStorage.setItem('extraHeadersKey', this.extraHeadersKeyText.val());
+  localStorage.setItem('extraHeadersValue', this.extraHeadersValueText.val());
+  localStorage.setItem('iceServersUrls', this.iceServersUrlsText.val());
 
   socket = new JsSIP.WebSocketInterface(this.serverAddressText.val());
   _ua = new JsSIP.UA({
@@ -160,11 +170,13 @@ function logout() {
 function call() {
   const number = $('#callNumberText').val();
   const extraHeadersKeys = document.getElementsByClassName('extra-headers-key');
-  const extraHeadersValues = document.getElementsByClassName(
-    'extra-headers-value'
-  );
+  const extraHeadersValues = document.getElementsByClassName('extra-headers-value');
   let extraHeaders = [];
-  
+
+  const iceServersUrls = document.getElementsByClassName('ice-servers-urls');
+  const iceServersUsername = document.getElementsByClassName('ice-servers-username');
+  const iceServersCredential = document.getElementsByClassName('ice-servers-credential');
+  let iceServers = [];
 
   for (let i = 0; i < extraHeadersKeys.length; i++) {
     if (extraHeadersKeys[i].value !== '' && extraHeadersValues[i].value !== '')
@@ -174,22 +186,29 @@ function call() {
   }
   console.log(extraHeaders);
 
+  for (let i = 0; i < iceServersUrls.length; i++) {
+    if (iceServersUrls[i].value !== '')
+      iceServers.push({
+        urls: iceServersUrls[i].value.split(','),
+        username: iceServersUsername[i].value,
+        credential: iceServersCredential[i].value
+      });
+  }
+  console.log(iceServers);
+
   localStorage.setItem('callNumber', number);
 
   this.callButton.prop('disabled', true);
   this.answerButton.prop('disabled', true);
   this.hangUpButton.prop('disabled', false);
-  
+
   // Делаем ИСХОДЯЩИЙ звонок
   // Принимать звонки этот код не умеет!
   this.session = this._ua.call(number, {
     pcConfig: {
       hackStripTcp: true, // Важно для хрома, чтоб он не тупил при звонке
       rtcpMuxPolicy: 'negotiate', // Важно для хрома, чтоб работал multiplexing. Эту штуку обязательно нужно включить на астере.
-      iceServers: [
-        { urls: ['stun:a.example.com', 'stun:b.example.com'] },
-        { urls: 'turn:example.com', username: 'foo', credential: ' 1234' }
-      ],
+      iceServers
     },
     mediaConstraints: {
       audio: true, // Поддерживаем только аудио
@@ -207,7 +226,7 @@ function call() {
     console.log('UA session connecting');
     playSound('ringback.ogg', true);
 
-    // Добавляем обработчик кнопке HangUp    
+    // Добавляем обработчик кнопке HangUp
 
     // Тут мы подключаемся к микрофону и цепляем к нему поток, который пойдёт в астер
     let peerconnection = this.session.connection;
@@ -249,7 +268,7 @@ function call() {
     playSound('rejected.mp3', false);
 
     this.callButton.prop('disabled', false);
-    this.answerButton.prop('disabled', false);
+    this.answerButton.prop('disabled', true);
     this.hangUpButton.prop('disabled', true);
   });
 
@@ -260,7 +279,7 @@ function call() {
     JsSIP.Utils.closeMediaStream(this._localClonedStream);
 
     this.callButton.prop('disabled', false);
-    this.answerButton.prop('disabled', false);
+    this.answerButton.prop('disabled', true);
     this.hangUpButton.prop('disabled', true);
   });
 
