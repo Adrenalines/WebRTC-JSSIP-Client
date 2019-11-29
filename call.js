@@ -91,6 +91,8 @@ function login() {
     let session = data.session;
 
     if (session.direction === 'incoming') {
+      playSound('ringing.ogg', true);
+
       this.callButton.prop('disabled', true);
       this.answerButton.prop('disabled', false);
       this.hangUpButton.prop('disabled', false);
@@ -115,7 +117,7 @@ function login() {
         this.answerButton.prop('disabled', true);
         this.hangUpButton.prop('disabled', false);
         console.log('UA session accepted');
-        stopSound('ringback.ogg');
+        stopSound('ringing.ogg');
         playSound('answered.mp3', false);
       });
 
@@ -144,7 +146,7 @@ function login() {
         remoteAudioControl.play();
       });
     }
-    // audioPlayer.play('ringing');
+
   });
 }
 
